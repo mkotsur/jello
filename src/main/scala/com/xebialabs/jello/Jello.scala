@@ -1,11 +1,10 @@
 package com.xebialabs.jello
 
-import com.xebialabs.jello.domain.Jira.Ticket
 import com.xebialabs.jello.domain.Trello.Board
 import com.xebialabs.jello.domain.{Jira, Trello}
 
-import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 
 class Jello(jira: Jira, trello: Trello) {
 

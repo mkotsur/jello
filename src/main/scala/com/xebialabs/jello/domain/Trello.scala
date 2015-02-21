@@ -3,7 +3,6 @@ package com.xebialabs.jello.domain
 import java.util.UUID
 
 import com.typesafe.config.ConfigFactory
-import com.xebialabs.jello
 import com.xebialabs.jello.domain.Jira.Ticket
 import com.xebialabs.jello.domain.Trello.{Board, Column, _}
 import com.xebialabs.jello.domain.json.TrelloProtocol

@@ -2,7 +2,6 @@ package com.xebialabs.jello.domain.json
 
 import com.typesafe.config.ConfigFactory
 import com.xebialabs.jello.domain.Jira.Ticket
-import com.xebialabs.jello.domain.Trello.{Board, Column}
 import spray.http.{BasicHttpCredentials, HttpRequest}
 import spray.httpx.RequestBuilding._
 import spray.httpx.SprayJsonSupport._
@@ -62,9 +61,6 @@ trait JiraProtocol extends DefaultJsonProtocol {
       JsObject(Map("fields" -> JsObject(Map(s"customfield_$estimationFieldId" -> estimation))))
     ) ~> addCredentials(credentials)
   }
-
-
-
 
 
 }
