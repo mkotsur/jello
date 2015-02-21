@@ -4,14 +4,12 @@ import com.xebialabs.jello.domain.Jira.Ticket
 import com.xebialabs.jello.domain.Trello.Board
 import com.xebialabs.jello.domain.{Jira, Trello}
 import org.mockito.Mockito._
-import org.scalatest._
 import org.scalatest.mock.MockitoSugar
+import scala.concurrent.ExecutionContext.Implicits.global
 
 import scala.concurrent.{Future, Promise}
-import scala.util.Success
 
-
-class JelloTest extends FunSpec with BeforeAndAfterEach with MockitoSugar {
+class JelloTest extends TestSugar with MockitoSugar {
 
   var jello: Jello = _
   var jira: Jira = _
@@ -45,9 +43,9 @@ class JelloTest extends FunSpec with BeforeAndAfterEach with MockitoSugar {
 
     it("should get tickets from JIRA and put them onto new board") {
       jello.prepareForEstimation(Seq("T-1", "T-2"))
-      p1.complete(Success(t1))
-      p2.complete(Success(t2))
-      boardPromise.complete(Success(myBoard))
+      p1.success(t1)
+      p2.success(t2)
+      boardPromise.success(myBoard)
       verify(trello).createBoard()
       verify(myBoard).putTickets(Seq(t1, t2))
     }
@@ -57,12 +55,14 @@ class JelloTest extends FunSpec with BeforeAndAfterEach with MockitoSugar {
       val estimatedT1 = t1.copy(estimation = Some(3))
       val estimatedT2 = t2.copy(estimation = Some(2))
 
-      when(myBoard.getTickets).thenReturn(Seq(estimatedT1, estimatedT2))
+      when(trello.getTickets("my-board-id")).thenReturn(Future(Seq(estimatedT1, estimatedT2)))
+      when(jira.updateEstimation(estimatedT1)).thenReturn(Future(estimatedT1))
+      when(jira.updateEstimation(estimatedT2)).thenReturn(Future(estimatedT2))
 
-      jello.saveEstimationsFrom(myBoard)
+      jello.saveEstimationsFrom("my-board-id").futureValue
 
-      verify(jira).putTicket(estimatedT1)
-      verify(jira).putTicket(estimatedT2)
+      verify(jira).updateEstimation(estimatedT1)
+      verify(jira).updateEstimation(estimatedT2)
       verify(trello).archiveBoard("my-board-id")
     }
   }

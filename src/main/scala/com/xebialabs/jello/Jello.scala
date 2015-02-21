@@ -1,5 +1,6 @@
 package com.xebialabs.jello
 
+import com.xebialabs.jello.domain.Jira.Ticket
 import com.xebialabs.jello.domain.Trello.Board
 import com.xebialabs.jello.domain.{Jira, Trello}
 
@@ -18,9 +19,14 @@ class Jello(jira: Jira, trello: Trello) {
     }
   }
 
-  def saveEstimationsFrom(board: Board): Unit = {
-    board.getTickets.foreach(jira.putTicket)
-    trello.archiveBoard(board.id)
+  def saveEstimationsFrom(boardId: String): Future[Unit] = {
+
+    trello.getTickets(boardId).flatMap {
+      tickets => Future.sequence(tickets.map(jira.updateEstimation))
+    } map  {
+      tickets => trello.archiveBoard(boardId)
+    }
+
   }
 
 }

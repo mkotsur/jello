@@ -1,6 +1,7 @@
 package com.xebialabs.jello.domain
 
 import com.typesafe.config.ConfigFactory
+import com.xebialabs.jello.TestSugar
 import com.xebialabs.jello.domain.Jira.Ticket
 import com.xebialabs.jello.domain.Trello.{Board, Column}
 import com.xebialabs.restito.builder.stub.StubHttp.whenHttp
@@ -9,13 +10,10 @@ import com.xebialabs.restito.semantics.Action._
 import com.xebialabs.restito.semantics.Condition
 import com.xebialabs.restito.semantics.Condition._
 import com.xebialabs.restito.server.StubServer
-import org.scalatest.{BeforeAndAfterEach, BeforeAndAfterAll, FunSpec}
 
-import scala.concurrent.Await
-import scala.concurrent.duration._
 import scala.language.postfixOps
 
-class TrelloTest extends FunSpec with BeforeAndAfterAll with BeforeAndAfterEach {
+class TrelloTest extends TestSugar {
 
   private val server: StubServer = new StubServer()
 
@@ -43,7 +41,7 @@ class TrelloTest extends FunSpec with BeforeAndAfterAll with BeforeAndAfterEach 
         .then(resourceContent("boards.lists.post.json"))
 
 
-      Await.result(new Trello().createBoard(), 1 second)
+      new Trello().createBoard().futureValue
 
       verifyHttp(server).once(post("/boards"))
 
@@ -70,22 +68,19 @@ class TrelloTest extends FunSpec with BeforeAndAfterAll with BeforeAndAfterEach 
 
       val board = Board("b1", "http://url.short", Seq(Column("0", "c0"), Column("1", "c1"), Column("42", "c42")))
 
-      Await.result(
-        board.putTickets(Seq(Ticket("t1", "Ticket 1"), Ticket("t2", "Ticket 2"))),
-        1 second
-      )
+      whenReady(board.putTickets(Seq(Ticket("t1", "Ticket 1"), Ticket("t2", "Ticket 2")))) { r =>
+        verifyHttp(server)
+          .once(
+            post("/cards"),
+            withPostBodyContaining(s"""Ticket 1""""),
+            withPostBodyContaining(s""""idList": "0"""")
+          ).then().once(
+            post("/cards"),
+            withPostBodyContaining(s"""Ticket 2""""),
+            withPostBodyContaining(s""""idList": "0"""")
+          )
 
-      verifyHttp(server)
-        .once(
-          post("/cards"),
-          withPostBodyContaining(s"""Ticket 1""""),
-          withPostBodyContaining(s""""idList": "0"""")
-        ).then().once(
-          post("/cards"),
-          withPostBodyContaining(s"""Ticket 2""""),
-          withPostBodyContaining(s""""idList": "0"""")
-        )
-
+      }
 
     }
 
@@ -94,12 +89,29 @@ class TrelloTest extends FunSpec with BeforeAndAfterAll with BeforeAndAfterEach 
         .`match`(put("/boards/b2/closed"))
         .then(resourceContent("boards.closed.put.json"))
 
-      Await.result(new Trello().archiveBoard("b2"), 1 second)
+      whenReady(new Trello().archiveBoard("b2")) { r =>
+        verifyHttp(server).once(
+          put("/boards/b2/closed"),
+          withPostBodyContaining(s""""value": true""")
+        )
+      }
+    }
 
-      verifyHttp(server).once(
-        put("/boards/b2/closed"),
-        withPostBodyContaining(s""""value": true""")
-      )
+    it("should return estimated tickets") {
+
+      val trello = new Trello
+
+      whenHttp(server)
+        .`match`(get("/boards/b1/lists"), parameter("cards", "open"))
+        .then(resourceContent("boards.b1.lists.json"))
+
+      val tickets = trello.getTickets("b1").futureValue
+
+      tickets should have length 3
+      tickets should contain(Ticket("T-1", "Do everything good", Some(0)))
+      tickets should contain(Ticket("T-2", "Fix all bugs", Some(2)))
+      tickets should contain(Ticket("T-3", "Do not create new bugs", Some(2)))
+
     }
   }
 

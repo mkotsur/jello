@@ -6,7 +6,7 @@ import com.typesafe.config.ConfigFactory
 import com.xebialabs.jello
 import com.xebialabs.jello.domain.Jira.Ticket
 import com.xebialabs.jello.domain.Trello.{Board, Column, _}
-import com.xebialabs.jello.domain.json.BoardsProtocol
+import com.xebialabs.jello.domain.json.TrelloProtocol
 import com.xebialabs.jello.http.RequestExecutor
 import spray.httpx.SprayJsonSupport._
 
@@ -17,33 +17,28 @@ import scala.concurrent.{Await, Future}
 
 object Trello {
 
-
   val conf = ConfigFactory.load()
 
   val columns: Seq[Int] = conf.getIntList("trello.lists").map(_.toInt)
 
   case class Column(id: String, name: String)
 
-  case class Board(id: String, shortUrl: String, lists: Seq[Column] = Seq()) extends RequestExecutor with BoardsProtocol {
+  case class Board(id: String, shortUrl: String, lists: Seq[Column] = Seq()) extends RequestExecutor with TrelloProtocol {
 
     def putTickets(tickets: Seq[Ticket]): Future[Seq[NewCardResp]] = {
       Future.successful(
         tickets.map(t => Await.result(
-          runRequest[NewCardResp](NewCard(name = s"${t.id}: ${t.title}", idList = lists.head.id)),
+          runRequest[NewCardResp](NewCard(name = s"${t.id} ${t.title}", idList = lists.head.id)),
           1 second
         ))
       )
     }
 
-
-    def getTickets: Seq[Ticket] = ???
-
   }
 
 }
 
-class Trello extends RequestExecutor with BoardsProtocol {
-  import jello._
+class Trello extends RequestExecutor with TrelloProtocol {
 
   def createBoard(): Future[Board] = {
 
@@ -59,13 +54,20 @@ class Trello extends RequestExecutor with BoardsProtocol {
       case b: Board =>
         val createdColumns = columns.map(c => {
           // Blocking because of bug in Trello :-(
-          Await.result(createColumn(b.id, c), timeout)
+          Await.result(createColumn(b.id, c), 10 second)
         })
         b.copy(lists = createdColumns)
     }
 
+
   }
 
   def archiveBoard(id: String) = runRequest[BoardResp](id, CloseBoardReq())
+
+
+
+  def getTickets(boardId: String): Future[Seq[Ticket]] = {
+    runRequest[Seq[ListsItemResp]](ListsReq(boardId)).map(_.flatten)
+  }
 
 }

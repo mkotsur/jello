@@ -21,9 +21,12 @@ object RequestExecutor {
 
 trait RequestExecutor extends LazyLogging {
 
+  private val loggingFunction = (i: HttpMessage) => logger.debug(i.entity.asString)
+
   def runRequest[T: FromResponseUnmarshaller](r: HttpRequest): Future[T] = {
-    logger.debug(r.toString)
-    val pipeline = sendReceive ~>
+    val pipeline = logRequest(loggingFunction) ~>
+      sendReceive ~>
+      logResponse(loggingFunction) ~>
       unmarshal[T]
     pipeline(r)
   }

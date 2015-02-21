@@ -1,6 +1,7 @@
 package com.xebialabs.jello.domain.json
 
 import com.typesafe.config.ConfigFactory
+import com.xebialabs.jello.domain.Jira.Ticket
 import com.xebialabs.jello.domain.Trello.{Board, Column}
 import spray.http.HttpRequest
 import spray.httpx.RequestBuilding._
@@ -11,7 +12,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.language.implicitConversions
 
-trait BoardsProtocol extends DefaultJsonProtocol {
+trait TrelloProtocol extends DefaultJsonProtocol {
 
   private val conf = ConfigFactory.load()
 
@@ -29,6 +30,10 @@ trait BoardsProtocol extends DefaultJsonProtocol {
   case class NewColumnResp(id: String, name: String)
   case class NewCard(name: String, idList: String)
   case class NewCardResp(id: String)
+  case class ListsReq(boardId: String)
+
+  case class ListsItemResp(id: String, name: String, cards: Seq[ListsItemCardResp])
+  case class ListsItemCardResp(id: String, name: String)
 
   implicit val NewBoardReqFormat = jsonFormat3(NewBoardReq)
   implicit val CloseBoardReqFormat = jsonFormat1(CloseBoardReq)
@@ -38,10 +43,24 @@ trait BoardsProtocol extends DefaultJsonProtocol {
   implicit val NewCardReqFormat = jsonFormat2(NewCard)
   implicit val NewCardRespFormat = jsonFormat1(NewCardResp)
 
+  implicit val ListsItemCardRespFormat = jsonFormat2(ListsItemCardResp)
+  implicit val ListsItemRespFormat = jsonFormat3(ListsItemResp)
+
 
   // Transformers from responses to domain objects
   implicit def boardRespToBoard(b: Future[BoardResp]): Future[Board] = b.map(bb => Board(bb.id, bb.shortUrl))
   implicit def columnRespToColumn(b: Future[NewColumnResp]): Future[Column] = b.map(bb => Column(bb.id, bb.name))
+
+  implicit def listsItemRespToTickets(list: ListsItemResp): Seq[Ticket] = {
+    val estimation = Some(list.name.toInt)
+    list.cards.map {
+      card => Ticket(
+        card.name.split(" ").head,
+        card.name.split(" ").tail.mkString(" "),
+        estimation
+      )
+    }
+  }
 
   // Transformers from requests case classes into HTTP Request objects
   implicit def newBoardReqToHttpReq(b: NewBoardReq): HttpRequest =
@@ -56,5 +75,7 @@ trait BoardsProtocol extends DefaultJsonProtocol {
   implicit def columnReqToHttpReq(bc:(String, ColumnReq)): HttpRequest =
     Post(s"$apiUri/boards/${bc._1}/lists?key=$appKey&token=$token", bc._2)
 
+  implicit def listsReqToHttpReq(listsReq: ListsReq): HttpRequest =
+    Get(s"$apiUri/boards/${listsReq.boardId}/lists?cards=open&card_fields=name&fields=name&key=$appKey&token=$token")
 
 }

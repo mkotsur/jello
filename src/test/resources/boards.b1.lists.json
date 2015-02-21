@@ -1,0 +1,30 @@
+[
+  {
+    "id": "i1",
+    "name": "0",
+    "cards": [
+      {
+        "id": "54dfad624c6ef69f552d59ea",
+        "name": "T-1 Do everything good"
+      }
+    ]
+  },
+  {
+    "id": "i2",
+    "name": "1",
+    "cards": []
+  },
+  {
+    "id": "i3",
+    "name": "2",
+    "cards": [
+      {
+        "id": "ii1",
+        "name": "T-2 Fix all bugs"
+      },
+      {  "id": "ii2",
+        "name": "T-3 Do not create new bugs"
+      }
+    ]
+  }
+]
