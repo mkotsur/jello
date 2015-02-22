@@ -1,0 +1,44 @@
+[
+  {
+    "id": "l1",
+    "idBoard": "b1",
+    "name": "",
+    "color": "red",
+    "uses": 1
+  },
+  {
+    "id": "l2",
+    "idBoard": "b1",
+    "name": "",
+    "color": "blue",
+    "uses": 0
+  },
+  {
+    "id": "l3",
+    "idBoard": "b1",
+    "name": "",
+    "color": "green",
+    "uses": 0
+  },
+  {
+    "id": "l4",
+    "idBoard": "b1",
+    "name": "",
+    "color": "orange",
+    "uses": 0
+  },
+  {
+    "id": "l5",
+    "idBoard": "b1",
+    "name": "",
+    "color": "purple",
+    "uses": 0
+  },
+  {
+    "id": "l6",
+    "idBoard": "b1",
+    "name": "",
+    "color": "yellow",
+    "uses": 0
+  }
+]

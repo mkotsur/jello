@@ -7,6 +7,7 @@ import com.xebialabs.jello.domain.Jira.Ticket
 import com.xebialabs.jello.domain.Trello.{Board, Column, _}
 import com.xebialabs.jello.domain.json.TrelloProtocol
 import com.xebialabs.jello.http.RequestExecutor
+import spray.http.HttpResponse
 import spray.httpx.SprayJsonSupport._
 
 import scala.collection.JavaConversions._
@@ -20,17 +21,42 @@ object Trello {
 
   val columns: Seq[Int] = conf.getIntList("trello.lists").map(_.toInt)
 
-  case class Column(id: String, name: String)
+  case class Column(id: String, name: String, cards: Seq[Card] = Seq())
+
+  case class Label(id: String, color: String)
+
+  case class Card(id: String, name: String)
 
   case class Board(id: String, shortUrl: String, lists: Seq[Column] = Seq()) extends RequestExecutor with TrelloProtocol {
 
-    def putTickets(tickets: Seq[Ticket]): Future[Seq[NewCardResp]] = {
+
+    /**
+     * Retrieves estimated tickets from the board.
+     */
+    def getCards: Future[Seq[Card]] = getColumns.map(_.flatMap(_.cards))
+
+    /**
+     * Retrieves columns with cards from the board.
+     */
+    def getColumns: Future[Seq[Column]] = runRequest[Seq[Column]](ColumnsReq(id))
+
+    /**
+     * Appends tickets onto the board
+     */
+    def putTickets(tickets: Seq[Ticket]): Future[Seq[Card]] = {
       Future.successful(
         tickets.map(t => Await.result(
-          runRequest[NewCardResp](NewCard(name = s"${t.id} ${t.title}", idList = lists.head.id)),
-          1 second
+          runRequest[Card](NewCardReq(name = s"${t.id} ${t.title}", idList = lists.head.id)),
+          5 seconds
         ))
       )
+    }
+
+    /**
+     * Updates card with the first available label on the board
+     */
+    def updateLabel(card: Card): Future[HttpResponse] = runRequest[Seq[Label]](GetLabelsReq(id)).flatMap { labels =>
+      runRequest[HttpResponse](UpdateLabelReq(card.id, labels.head.id))
     }
 
   }
@@ -39,6 +65,9 @@ object Trello {
 
 class Trello extends RequestExecutor with TrelloProtocol {
 
+  /**
+   * Creates a new board with lists defined in the configuration file.
+   */
   def createBoard(): Future[Board] = {
 
     def createColumn(board: String, column: Int): Future[Column] = {
@@ -47,7 +76,7 @@ class Trello extends RequestExecutor with TrelloProtocol {
       )
     }
 
-    val boardFuture: Future[Board] = runRequest[BoardResp](NewBoardReq(UUID.randomUUID().toString))
+    val boardFuture: Future[Board] = runRequest[NewBoardResp](NewBoardReq(UUID.randomUUID().toString))
 
     boardFuture.map {
       case b: Board =>
@@ -57,16 +86,13 @@ class Trello extends RequestExecutor with TrelloProtocol {
         })
         b.copy(lists = createdColumns)
     }
-
-
   }
 
-  def archiveBoard(id: String) = runRequest[BoardResp](id, CloseBoardReq())
+  /**
+   * Archives a board.
+   * //TODO: move into Board class
+   */
+  def archiveBoard(id: String) = runRequest[NewBoardResp](id, CloseBoardReq())
 
-
-
-  def getTickets(boardId: String): Future[Seq[Ticket]] = {
-    runRequest[Seq[ListsItemResp]](ListsReq(boardId)).map(_.flatten)
-  }
 
 }

@@ -4,7 +4,7 @@
     "name": "0",
     "cards": [
       {
-        "id": "54dfad624c6ef69f552d59ea",
+        "id": "c1",
         "name": "T-1 Do everything good"
       }
     ]
@@ -19,10 +19,10 @@
     "name": "2",
     "cards": [
       {
-        "id": "ii1",
+        "id": "c2",
         "name": "T-2 Fix all bugs"
       },
-      {  "id": "ii2",
+      {  "id": "c3",
         "name": "T-3 Do not create new bugs"
       }
     ]

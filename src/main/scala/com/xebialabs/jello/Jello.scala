@@ -1,5 +1,6 @@
 package com.xebialabs.jello
 
+import com.xebialabs.jello.domain.Jira.Ticket
 import com.xebialabs.jello.domain.Trello.Board
 import com.xebialabs.jello.domain.{Jira, Trello}
 
@@ -18,12 +19,13 @@ class Jello(jira: Jira, trello: Trello) {
     }
   }
 
-  def saveEstimationsFrom(boardId: String): Future[Unit] = {
+  def saveEstimationsFrom(board: Board): Future[Unit] = {
 
-    trello.getTickets(boardId).flatMap {
-      tickets => Future.sequence(tickets.map(jira.updateEstimation))
+    board.getColumns.flatMap { columns =>
+      val tickets: Seq[Ticket] = columns
+      Future.sequence(tickets.map(jira.updateEstimation))
     } map  {
-      tickets => trello.archiveBoard(boardId)
+      tickets => trello.archiveBoard(board.id)
     }
 
   }

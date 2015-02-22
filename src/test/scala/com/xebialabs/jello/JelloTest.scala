@@ -1,15 +1,16 @@
 package com.xebialabs.jello
 
 import com.xebialabs.jello.domain.Jira.Ticket
-import com.xebialabs.jello.domain.Trello.Board
+import com.xebialabs.jello.domain.Trello.{Card, Column, Board}
 import com.xebialabs.jello.domain.{Jira, Trello}
+import com.xebialabs.jello.support.UnitTestSugar
 import org.mockito.Mockito._
 import org.scalatest.mock.MockitoSugar
-import scala.concurrent.ExecutionContext.Implicits.global
 
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{Future, Promise}
 
-class JelloTest extends TestSugar with MockitoSugar {
+class JelloTest extends UnitTestSugar {
 
   var jello: Jello = _
   var jira: Jira = _
@@ -55,11 +56,17 @@ class JelloTest extends TestSugar with MockitoSugar {
       val estimatedT1 = t1.copy(estimation = Some(3))
       val estimatedT2 = t2.copy(estimation = Some(2))
 
-      when(trello.getTickets("my-board-id")).thenReturn(Future(Seq(estimatedT1, estimatedT2)))
+      val c3 = Column("c3", "3", Seq(Card("c1", "T-1 Create feature")))
+      val c2 = Column("c2", "2", Seq(Card("c2", "T-2 Fix bug")))
+
+      val myBoard = mock[Board]
+      when(myBoard.id).thenReturn("my-board-id")
+
+      when(myBoard.getColumns).thenReturn(Future(Seq(c3, c2)))
       when(jira.updateEstimation(estimatedT1)).thenReturn(Future(estimatedT1))
       when(jira.updateEstimation(estimatedT2)).thenReturn(Future(estimatedT2))
 
-      jello.saveEstimationsFrom("my-board-id").futureValue
+      jello.saveEstimationsFrom(myBoard).futureValue
 
       verify(jira).updateEstimation(estimatedT1)
       verify(jira).updateEstimation(estimatedT2)

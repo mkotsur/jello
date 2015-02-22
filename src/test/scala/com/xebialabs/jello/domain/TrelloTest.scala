@@ -1,19 +1,20 @@
 package com.xebialabs.jello.domain
 
 import com.typesafe.config.ConfigFactory
-import com.xebialabs.jello.TestSugar
 import com.xebialabs.jello.domain.Jira.Ticket
-import com.xebialabs.jello.domain.Trello.{Board, Column}
+import com.xebialabs.jello.domain.Trello.{Card, Board, Column}
+import com.xebialabs.jello.support.UnitTestSugar
 import com.xebialabs.restito.builder.stub.StubHttp.whenHttp
 import com.xebialabs.restito.builder.verify.VerifyHttp.verifyHttp
 import com.xebialabs.restito.semantics.Action._
 import com.xebialabs.restito.semantics.Condition
 import com.xebialabs.restito.semantics.Condition._
 import com.xebialabs.restito.server.StubServer
+import org.glassfish.grizzly.http.util.HttpStatus
 
 import scala.language.postfixOps
 
-class TrelloTest extends TestSugar {
+class TrelloTest extends UnitTestSugar {
 
   private val server: StubServer = new StubServer()
 
@@ -64,7 +65,7 @@ class TrelloTest extends TestSugar {
 
       whenHttp(server)
         .`match`(post("/cards"))
-        .then(contentType("application/json"), stringContent("""{"id": "c1"}"""))
+        .then(resourceContent("cards.post.json"))
 
       val board = Board("b1", "http://url.short", Seq(Column("0", "c0"), Column("1", "c1"), Column("42", "c42")))
 
@@ -99,18 +100,36 @@ class TrelloTest extends TestSugar {
 
     it("should return estimated tickets") {
 
-      val trello = new Trello
-
       whenHttp(server)
         .`match`(get("/boards/b1/lists"), parameter("cards", "open"))
         .then(resourceContent("boards.b1.lists.json"))
 
-      val tickets = trello.getTickets("b1").futureValue
+      val columns = Board("b1", "http://aaa").getColumns.futureValue
 
-      tickets should have length 3
-      tickets should contain(Ticket("T-1", "Do everything good", Some(0)))
-      tickets should contain(Ticket("T-2", "Fix all bugs", Some(2)))
-      tickets should contain(Ticket("T-3", "Do not create new bugs", Some(2)))
+      columns shouldEqual Seq(
+        Column("i1", "0", Seq(Card("c1", "T-1 Do everything good"))),
+        Column("i2", "1", Seq()),
+        Column("i3", "2", Seq(Card("c2", "T-2 Fix all bugs"), Card("c3", "T-3 Do not create new bugs")))
+      )
+
+    }
+
+    it("should update label") {
+      whenHttp(server)
+        .`match`(get("/boards/b1/labels"))
+        .then(resourceContent("boards.b1.labels.json"))
+
+      whenHttp(server)
+        .`match`(post("/cards/c1/idLabels"))
+        .then(status(HttpStatus.NO_CONTENT_204))
+
+
+      Board("b1", "http://bbb").updateLabel(Card("c1", "Card 1")).futureValue
+
+      verifyHttp(server)
+        .once(post("/cards/c1/idLabels"), withPostBodyContaining("\"value\": \"l1\""))
+
+
 
     }
   }

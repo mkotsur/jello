@@ -1,8 +1,8 @@
 package com.xebialabs.jello.domain
 
 import com.typesafe.config.ConfigFactory
-import com.xebialabs.jello.TestSugar
 import com.xebialabs.jello.domain.Jira.Ticket
+import com.xebialabs.jello.support.UnitTestSugar
 import com.xebialabs.restito.builder.stub.StubHttp.whenHttp
 import com.xebialabs.restito.builder.verify.VerifyHttp.verifyHttp
 import com.xebialabs.restito.semantics.Action._
@@ -15,7 +15,7 @@ import scala.concurrent.Await
 import scala.concurrent.duration._
 import scala.language.postfixOps
 
-class JiraTest extends TestSugar {
+class JiraTest extends UnitTestSugar {
 
   private val server = new StubServer()
 

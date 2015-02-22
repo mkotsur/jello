@@ -1,5 +1,8 @@
 package com.xebialabs
 
+import akka.actor.ActorSystem
+import akka.util.Timeout
+
 import scala.concurrent.Future
 import scala.concurrent.duration.Duration
 import scala.util.{Failure, Success}
@@ -9,6 +12,9 @@ import scala.concurrent.ExecutionContext.Implicits.global
 package object jello {
 
   implicit val timeout: Duration = 10 seconds
+
+  implicit val system: ActorSystem = ActorSystem()
+
 
   implicit class PrintableFuture[T](f: Future[T]) {
 
