@@ -129,8 +129,6 @@ class TrelloTest extends UnitTestSugar {
       verifyHttp(server)
         .once(post("/cards/c1/idLabels"), withPostBodyContaining("\"value\": \"l1\""))
 
-
-
     }
   }
 

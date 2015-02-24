@@ -1,10 +1,10 @@
 package com.xebialabs
 
 import akka.actor.ActorSystem
-import akka.util.Timeout
 
 import scala.concurrent.Future
 import scala.concurrent.duration.Duration
+import scala.language.postfixOps
 import scala.util.{Failure, Success}
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext.Implicits.global
