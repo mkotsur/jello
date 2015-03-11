@@ -9,12 +9,14 @@ import scala.concurrent.Future
 
 class Jello(jira: Jira, trello: Trello) {
 
-  def prepareForEstimation(tickets: Seq[String]): Future[Board] = {
+  def prepareForEstimation(tickets: Seq[String], title: String): Future[Board] = {
 
     Future.sequence(tickets.map(jira.getTicket)).flatMap {
       case tt =>
-        val b = trello.createBoard()
-        b.flatMap(_.putTickets(tt))
+        val b = trello.createBoard(title)
+        b.flatMap({
+          b => b.putTickets(tt)
+        })
         b
     }
   }

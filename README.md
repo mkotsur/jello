@@ -17,3 +17,9 @@ To get an app token you need to visit this URL:
 
 
 Please note, that token expires every 30 days.
+
+# Tickets range
+
+Can be specified as a comma separated sequence of tickets and ranges. Range has a format: `{i}@{start-with-ticket}..{end-with-ticket}`, where `i` is rapid board id.
+
+e.g.: `4@DEPL-1234..DEPL-1278, DEPL-5555, DEPL-6666`.

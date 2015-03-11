@@ -37,17 +37,17 @@ class JelloTest extends UnitTestSugar {
     myBoard = mock[Board]
     when(myBoard.id).thenReturn("my-board-id")
 
-    when(trello.createBoard()).thenReturn(boardPromise.future)
+    when(trello.createBoard("My board")).thenReturn(boardPromise.future)
   }
 
   describe("jello application") {
 
     it("should get tickets from JIRA and put them onto new board") {
-      jello.prepareForEstimation(Seq("T-1", "T-2"))
+      jello.prepareForEstimation(Seq("T-1", "T-2"), "My board")
       p1.success(t1)
       p2.success(t2)
       boardPromise.success(myBoard)
-      verify(trello).createBoard()
+      verify(trello).createBoard("My board")
       verify(myBoard).putTickets(Seq(t1, t2))
     }
 

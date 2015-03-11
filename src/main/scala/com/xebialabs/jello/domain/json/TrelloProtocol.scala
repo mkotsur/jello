@@ -28,8 +28,8 @@ trait TrelloProtocol extends DefaultJsonProtocol {
   case class NewBoardReq(name: String, closed: Boolean = false, defaultLists: Boolean = false)
   implicit val NewBoardReqFormat = jsonFormat3(NewBoardReq)
   
-  case class NewBoardResp(id: String, name: String, url: String, shortUrl: String)
-  implicit val NewBoardRespFormat = jsonFormat4(NewBoardResp)
+  case class BoardResp(id: String, name: String, url: String, shortUrl: String)
+  implicit val BoardRespFormat = jsonFormat4(BoardResp)
   
   case class CloseBoardReq(value: Boolean = true)
   implicit val CloseBoardReqFormat = jsonFormat1(CloseBoardReq)
@@ -66,7 +66,7 @@ trait TrelloProtocol extends DefaultJsonProtocol {
    * Transformers from response objects (defined above) into domain objects
    */
 
-  implicit def boardRespToBoard(b: Future[NewBoardResp]): Future[Board] = b.map(bb => Board(bb.id, bb.shortUrl))
+  implicit def boardRespToBoard(b: Future[BoardResp]): Future[Board] = b.map(bb => Board(bb.id, bb.shortUrl))
 
   implicit def columnRespToColumn(b: Future[NewColumnResp]): Future[Column] = b.map(bb => Column(bb.id, bb.name))
 

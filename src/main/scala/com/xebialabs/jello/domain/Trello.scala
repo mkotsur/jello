@@ -14,6 +14,7 @@ import scala.collection.JavaConversions._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
+import scala.language.postfixOps
 
 object Trello {
 
@@ -68,7 +69,7 @@ class Trello extends RequestExecutor with TrelloProtocol {
   /**
    * Creates a new board with lists defined in the configuration file.
    */
-  def createBoard(): Future[Board] = {
+  def createBoard(title: String = UUID.randomUUID().toString): Future[Board] = {
 
     def createColumn(board: String, column: Int): Future[Column] = {
       runRequest[NewColumnResp](
@@ -76,7 +77,7 @@ class Trello extends RequestExecutor with TrelloProtocol {
       )
     }
 
-    val boardFuture: Future[Board] = runRequest[NewBoardResp](NewBoardReq(UUID.randomUUID().toString))
+    val boardFuture: Future[Board] = runRequest[BoardResp](NewBoardReq(title))
 
     boardFuture.map {
       case b: Board =>
@@ -92,7 +93,7 @@ class Trello extends RequestExecutor with TrelloProtocol {
    * Archives a board.
    * //TODO: move into Board class
    */
-  def archiveBoard(id: String) = runRequest[NewBoardResp](id, CloseBoardReq())
+  def archiveBoard(id: String) = runRequest[BoardResp](id, CloseBoardReq())
 
 
 }
