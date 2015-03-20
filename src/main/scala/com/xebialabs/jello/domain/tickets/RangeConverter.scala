@@ -55,9 +55,11 @@ trait RangeConverter {
             acc.flatMap( seq => jira.getRapidBoardTickets(boardId, begin, end).map( tt => seq ++ tt))
         })
 
-      case Failure(ex: ParseError) => Future.failed(new IllegalArgumentException(parser.formatError(ex)))
+      case Failure(ex: ParseError) =>
+        Future.failed(new IllegalArgumentException(parser.formatError(ex)))
 
-      case Failure(ex) => Future.failed(new IllegalArgumentException("Could not parse input", ex))
+      case Failure(ex) =>
+        Future.failed(new IllegalArgumentException("Could not parse input", ex))
     }
   }
 

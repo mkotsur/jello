@@ -2,6 +2,7 @@ package com.xebialabs.jello
 
 import java.util.Date
 
+import com.typesafe.scalalogging.LazyLogging
 import com.xebialabs.jello.domain.tickets.RangeConverter
 import com.xebialabs.jello.domain.{Jira, Trello}
 import com.xebialabs.jello.watch.DragWatcherActor
@@ -12,13 +13,13 @@ import scala.concurrent.Future
 import scala.concurrent.duration._
 import scala.io.StdIn
 import scala.language.postfixOps
+import scala.util.{Success, Failure}
 
-object Main extends App with RangeConverter {
+object Main extends App with RangeConverter with LazyLogging {
 
   implicit val jira = new Jira()
   val trello = new Trello()
   val jello = new Jello(jira, trello)
-
 
   println("Welcome to Jello!")
 
@@ -32,10 +33,8 @@ object Main extends App with RangeConverter {
     case t => t
   }
 
-  ticketsForEstimation.flatMap {
-    tickets =>
-      val ids: Seq[String] = tickets.map(_.id)
-      jello.prepareForEstimation(ids, title)
+  val isDone = ticketsForEstimation.flatMap { tickets =>
+      jello.prepareForEstimation(tickets.map(_.id), title)
   } flatMap { board =>
     Future {
       println(s"Please do the estimations at: ${board.shortUrl} and press enter when you're done.")
@@ -49,12 +48,20 @@ object Main extends App with RangeConverter {
       jello.saveEstimationsFrom(board)
     } flatMap { nothing =>
       trello.archiveBoard(board.id)
-    } andThen {
-      case r =>
-        println("Thanks for using Jello. Have a nice day.")
-        system.shutdown()
     }
   }
 
+  isDone.andThen {
+    case Failure(e) =>
+      logger.warn("There was an error during the execution: ", e)
+    case Success(_) =>
+      logger.info("Thanks for using Jello. Have a nice day.")
+  } andThen {
+    case _ =>
+      logger.debug("Shutting down the actor system.")
+      system.shutdown()
+  }
+
+  system.awaitTermination()
 
 }
