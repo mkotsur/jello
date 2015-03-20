@@ -1,8 +1,9 @@
 name := "jello"
+version := "1.0"
+
+enablePlugins(JavaAppPackaging)
 
 mainClass in Compile := Some("com.xebialabs.jello.Main")
-
-version := "1.0"
 
 scalaVersion := "2.11.5"
 
