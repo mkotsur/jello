@@ -1,10 +1,12 @@
 package com.xebialabs.jello.domain
 
+import com.xebialabs.jello.conf.ConfigAware
 import com.xebialabs.jello.domain.Jira.Ticket
 import com.xebialabs.jello.domain.json.JiraProtocol
 import com.xebialabs.jello.http.RequestExecutor
 import spray.http.HttpResponse
 import spray.httpx.SprayJsonSupport._
+
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
@@ -12,7 +14,7 @@ object Jira {
   case class Ticket(id: String, title: String, estimation: Option[Int] = None)
 }
 
-class Jira extends RequestExecutor with JiraProtocol {
+class Jira extends RequestExecutor with JiraProtocol { self: ConfigAware =>
 
   def getTicket(id: String): Future[Ticket] = runRequest[TicketResp](GetTicketReq(id))
 

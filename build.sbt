@@ -1,7 +1,12 @@
 name := "jello"
 version := "1.0"
 
+import com.typesafe.sbt.SbtNativePackager._
+import com.typesafe.sbt.packager.archetypes.ServerLoader
+import NativePackagerKeys._
+
 enablePlugins(JavaAppPackaging)
+
 
 mainClass in Compile := Some("com.xebialabs.jello.Main")
 
@@ -32,8 +37,3 @@ libraryDependencies += "ch.qos.logback" % "logback-classic" % "1.1.2"
 libraryDependencies += "com.typesafe.scala-logging" %% "scala-logging" % "3.1.0"
 
 libraryDependencies += "org.parboiled" %% "parboiled" % "2.1.0"
-
-
-
-
-    

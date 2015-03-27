@@ -2,7 +2,7 @@ package com.xebialabs.jello.domain
 
 import java.util.UUID
 
-import com.typesafe.config.ConfigFactory
+import com.xebialabs.jello.conf.{DefaultConfig, ConfigAware}
 import com.xebialabs.jello.domain.Jira.Ticket
 import com.xebialabs.jello.domain.Trello.{Board, Column, _}
 import com.xebialabs.jello.domain.json.TrelloProtocol
@@ -10,7 +10,6 @@ import com.xebialabs.jello.http.RequestExecutor
 import spray.http.HttpResponse
 import spray.httpx.SprayJsonSupport._
 
-import scala.collection.JavaConversions._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
@@ -18,18 +17,17 @@ import scala.language.postfixOps
 
 object Trello {
 
-  val conf = ConfigFactory.load()
-
-  val columns: Seq[Int] = conf.getIntList("trello.lists").map(_.toInt)
-
   case class Column(id: String, name: String, cards: Seq[Card] = Seq())
 
   case class Label(id: String, color: String)
 
   case class Card(id: String, name: String)
 
-  case class Board(id: String, shortUrl: String, lists: Seq[Column] = Seq()) extends RequestExecutor with TrelloProtocol {
+  case class TokenPermission(idModel: String, modelType: String, read: Boolean, write: Boolean)
 
+  case class TokenInfo(identifier: String, dateCreated: String, dateExpires: String, permissions: Seq[TokenPermission])
+
+  case class Board(id: String, shortUrl: String, lists: Seq[Column] = Seq()) extends RequestExecutor with TrelloProtocol with DefaultConfig {
 
     /**
      * Retrieves estimated tickets from the board.
@@ -64,12 +62,19 @@ object Trello {
 
 }
 
-class Trello extends RequestExecutor with TrelloProtocol {
+class Trello extends RequestExecutor with TrelloProtocol { this: ConfigAware =>
+
+  /**
+   * Returns information about currently configured token.
+   */
+  def getTokenInfo: Future[TokenInfo] = runRequest[TokenInfo](TokenInfoReq)
 
   /**
    * Creates a new board with lists defined in the configuration file.
    */
   def createBoard(title: String = UUID.randomUUID().toString): Future[Board] = {
+
+    val columns = config.trello.lists
 
     def createColumn(board: String, column: Int): Future[Column] = {
       runRequest[NewColumnResp](

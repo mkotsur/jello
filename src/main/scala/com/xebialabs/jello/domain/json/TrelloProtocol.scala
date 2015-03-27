@@ -1,7 +1,10 @@
 package com.xebialabs.jello.domain.json
 
+import java.util.Date
+
 import com.typesafe.config.ConfigFactory
-import com.xebialabs.jello.domain.Trello.{Card, Label, Board, Column}
+import com.xebialabs.jello.conf.ConfigAware
+import com.xebialabs.jello.domain.Trello._
 import spray.http.HttpRequest
 import spray.httpx.RequestBuilding._
 import spray.httpx.SprayJsonSupport._
@@ -11,16 +14,14 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.language.implicitConversions
 
-trait TrelloProtocol extends DefaultJsonProtocol {
+trait TrelloProtocol extends DefaultJsonProtocol { this: ConfigAware =>
 
-  private val conf = ConfigFactory.load()
 
-  private val appKey = conf.getString("trello.appKey")
+  private val appKey = config.trello.appKey
 
-  private val token = conf.getString("trello.appToken")
+  private val token = config.trello.token
 
-  private val apiUri = conf.getString("trello.apiUri")
-
+  private val apiUri = config.trello.apiUri
 
   /**
    * Request-response case classes and objects with their json formats
@@ -54,12 +55,13 @@ trait TrelloProtocol extends DefaultJsonProtocol {
 
   case class ColumnsReq(boardId: String)
 
-
   /**
    * Directly for domain objects
    */
   implicit val CardFormat = jsonFormat2(Card)
   implicit val ColumnFormat = jsonFormat3(Column)
+  implicit val TokenPermissionRespFormat = jsonFormat4(TokenPermission)
+  implicit val TokenInfoRespFormat = jsonFormat4(TokenInfo)
 
 
   /**
@@ -95,5 +97,7 @@ trait TrelloProtocol extends DefaultJsonProtocol {
 
   implicit def updateLabelsReqToHttpReq(ulr: UpdateLabelReq): HttpRequest =
     Post(s"$apiUri/cards/${ulr.cardId}/idLabels?key=$appKey&token=$token", Map("value" -> ulr.labelId))
+
+  val TokenInfoReq: HttpRequest = Get(s"$apiUri/tokens/$token?key=$appKey")
 
 }

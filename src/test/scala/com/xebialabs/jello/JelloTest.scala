@@ -72,5 +72,13 @@ class JelloTest extends UnitTestSugar {
       verify(jira).updateEstimation(estimatedT2)
       verify(trello).archiveBoard("my-board-id")
     }
+
+    it("should throw an exception when token is empty") {
+
+    }
+
+    it("should throw an exception when token in invalid") {
+
+    }
   }
 }

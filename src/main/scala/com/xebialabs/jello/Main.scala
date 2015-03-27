@@ -3,6 +3,7 @@ package com.xebialabs.jello
 import java.util.Date
 
 import com.typesafe.scalalogging.LazyLogging
+import com.xebialabs.jello.conf.DefaultConfig
 import com.xebialabs.jello.domain.tickets.RangeConverter
 import com.xebialabs.jello.domain.{Jira, Trello}
 import com.xebialabs.jello.watch.DragWatcherActor
@@ -17,8 +18,8 @@ import scala.util.{Success, Failure}
 
 object Main extends App with RangeConverter with LazyLogging {
 
-  implicit val jira = new Jira()
-  val trello = new Trello()
+  implicit val jira = new Jira() with DefaultConfig
+  val trello = new Trello() with DefaultConfig
   val jello = new Jello(jira, trello)
 
   println("Welcome to Jello!")

@@ -1,8 +1,8 @@
 package com.xebialabs.jello.domain
 
-import com.typesafe.config.ConfigFactory
+import com.xebialabs.jello.conf.{ConfigAware, JelloConfig}
 import com.xebialabs.jello.domain.Jira.Ticket
-import com.xebialabs.jello.support.UnitTestSugar
+import com.xebialabs.jello.support.{UnitTestSugar, _}
 import com.xebialabs.restito.builder.stub.StubHttp.whenHttp
 import com.xebialabs.restito.builder.verify.VerifyHttp.verifyHttp
 import com.xebialabs.restito.semantics.Action._
@@ -17,14 +17,13 @@ import scala.language.postfixOps
 
 class JiraTest extends UnitTestSugar {
 
-  private val server = new StubServer()
+  private val server = new StubServer().run()
 
-  override protected def beforeAll(): Unit = {
-    server.run()
-    System.setProperty("jira.apiUri", s"http://localhost:${server.getPort}")
-    ConfigFactory.invalidateCaches()
+  private val testConfig = JelloConfig().withOverrides(Map("jira.apiUri" -> s"http://localhost:${server.getPort}"))
+
+  val jira = new Jira() with ConfigAware {
+    override def config: JelloConfig = testConfig
   }
-
 
   override protected def afterAll(): Unit = {
     server.stop()
@@ -39,7 +38,7 @@ class JiraTest extends UnitTestSugar {
         .`match`(get("/api/latest/issue/T-1"))
         .then(resourceContent("issue.T-1.json"))
 
-      val ticket = Await.result(new Jira().getTicket("T-1"), 1 second)
+      val ticket = Await.result(jira.getTicket("T-1"), 1 second)
 
       ticket.id should equal("T-1")
       ticket.title should equal("Fix it")
@@ -49,11 +48,11 @@ class JiraTest extends UnitTestSugar {
 
     it("should get a range of tickets from RapidBoard") {
       whenHttp(server)
-      .`match`(get("/greenhopper/1.0/xboard/plan/backlog/data.json"), parameter("rapidViewId", "13"))
-      .then(resourceContent("rapidviews.list.json"))
+        .`match`(get("/greenhopper/1.0/xboard/plan/backlog/data.json"), parameter("rapidViewId", "13"))
+        .then(resourceContent("rapidviews.list.json"))
 
 
-      val tickets = Await.result(new Jira().getRapidBoardTickets(13, "REL-2132", "REL-1084"), 10 seconds)
+      val tickets = Await.result(jira.getRapidBoardTickets(13, "REL-2132", "REL-1084"), 10 seconds)
 
       tickets.length should be > 0
       tickets.find(_.id == "REL-2227") shouldBe None
@@ -66,10 +65,9 @@ class JiraTest extends UnitTestSugar {
 
     it("should update ticket") {
       whenHttp(server)
-      .`match`(startsWithUri("/api/2/issue/T-"), method(Method.PUT))
-      .then(status(HttpStatus.NO_CONTENT_204))
+        .`match`(startsWithUri("/api/2/issue/T-"), method(Method.PUT))
+        .then(status(HttpStatus.NO_CONTENT_204))
 
-      val jira = new Jira()
       jira.updateEstimation(Ticket("T-1", "Some ticket with estimation", Some(4))).futureValue
       jira.updateEstimation(Ticket("T-2", "Some ticket without", None)).futureValue
 

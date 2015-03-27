@@ -1,0 +1,21 @@
+{
+  "id": "t",
+  "identifier": "Jello",
+  "idMember": "4eef23678d592c30502cd3a8",
+  "dateCreated": "2015-03-11T09:58:11.344Z",
+  "dateExpires": "2015-04-10T09:58:11.344Z",
+  "permissions": [
+    {
+      "idModel": "*",
+      "modelType": "Board",
+      "read": true,
+      "write": true
+    },
+    {
+      "idModel": "*",
+      "modelType": "Organization",
+      "read": true,
+      "write": true
+    }
+  ]
+}

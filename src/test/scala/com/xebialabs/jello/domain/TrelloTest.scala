@@ -1,9 +1,11 @@
 package com.xebialabs.jello.domain
 
-import com.typesafe.config.ConfigFactory
+import com.xebialabs.jello.conf.{ConfigAware, JelloConfig}
 import com.xebialabs.jello.domain.Jira.Ticket
-import com.xebialabs.jello.domain.Trello.{Card, Board, Column}
-import com.xebialabs.jello.support.UnitTestSugar
+import com.xebialabs.jello.domain.Trello.{Board, Card, Column, TokenPermission}
+import com.xebialabs.jello.domain.json.TrelloProtocol
+import com.xebialabs.jello.http.RequestExecutor
+import com.xebialabs.jello.support._
 import com.xebialabs.restito.builder.stub.StubHttp.whenHttp
 import com.xebialabs.restito.builder.verify.VerifyHttp.verifyHttp
 import com.xebialabs.restito.semantics.Action._
@@ -11,18 +13,22 @@ import com.xebialabs.restito.semantics.Condition
 import com.xebialabs.restito.semantics.Condition._
 import com.xebialabs.restito.server.StubServer
 import org.glassfish.grizzly.http.util.HttpStatus
+import spray.http.{HttpResponse, StatusCodes}
+import spray.httpx.UnsuccessfulResponseException
 
 import scala.language.postfixOps
 
 class TrelloTest extends UnitTestSugar {
 
-  private val server: StubServer = new StubServer()
+  private val server: StubServer = new StubServer().run()
 
-  override protected def beforeAll(): Unit = {
-    server.run()
-    System.setProperty("trello.apiUri", s"http://localhost:${server.getPort}")
-    ConfigFactory.invalidateCaches()
+  private val testConfig = JelloConfig().withOverrides(Map("trello.apiUri" -> s"http://localhost:${server.getPort}"))
+
+  private trait TestConfig extends ConfigAware {
+    override def config: JelloConfig = testConfig
   }
+
+  private val trello = new Trello() with TestConfig
 
   override protected def afterAll(): Unit = {
     server.stop()
@@ -42,7 +48,7 @@ class TrelloTest extends UnitTestSugar {
         .then(resourceContent("boards.lists.post.json"))
 
 
-      new Trello().createBoard().futureValue
+      trello.createBoard().futureValue
 
       verifyHttp(server).once(post("/boards"))
 
@@ -67,7 +73,9 @@ class TrelloTest extends UnitTestSugar {
         .`match`(post("/cards"))
         .then(resourceContent("cards.post.json"))
 
-      val board = Board("b1", "http://url.short", Seq(Column("0", "c0"), Column("1", "c1"), Column("42", "c42")))
+      val board = new Board("b1", "http://url.short", Seq(Column("0", "c0"), Column("1", "c1"), Column("42", "c42"))) {
+        override def config: JelloConfig = testConfig
+      }
 
       whenReady(board.putTickets(Seq(Ticket("t1", "Ticket 1"), Ticket("t2", "Ticket 2")))) { r =>
         verifyHttp(server)
@@ -90,7 +98,7 @@ class TrelloTest extends UnitTestSugar {
         .`match`(put("/boards/b2/closed"))
         .then(resourceContent("boards.closed.put.json"))
 
-      whenReady(new Trello().archiveBoard("b2")) { r =>
+      whenReady(trello.archiveBoard("b2")) { r =>
         verifyHttp(server).once(
           put("/boards/b2/closed"),
           withPostBodyContaining(s""""value": true""")
@@ -104,7 +112,7 @@ class TrelloTest extends UnitTestSugar {
         .`match`(get("/boards/b1/lists"), parameter("cards", "open"))
         .then(resourceContent("boards.b1.lists.json"))
 
-      val columns = Board("b1", "http://aaa").getColumns.futureValue
+      val columns = (new Board("b1", "http://aaa") with TestConfig).getColumns.futureValue
 
       columns shouldEqual Seq(
         Column("i1", "0", Seq(Card("c1", "T-1 Do everything good"))),
@@ -124,10 +132,44 @@ class TrelloTest extends UnitTestSugar {
         .then(status(HttpStatus.NO_CONTENT_204))
 
 
-      Board("b1", "http://bbb").updateLabel(Card("c1", "Card 1")).futureValue
+      (new Board("b1", "http://bbb") with TestConfig).updateLabel(Card("c1", "Card 1")).futureValue
 
       verifyHttp(server)
         .once(post("/cards/c1/idLabels"), withPostBodyContaining("\"value\": \"l1\""))
+
+    }
+
+    it("should return a failed future when application token is not correct") {
+
+      whenHttp(server)
+        .`match`(get("/boards/b1/labels"), parameter("token", "wrong-token"))
+        .then(unauthorized(), stringContent("invalid token"))
+
+
+      new TrelloProtocol with RequestExecutor with ConfigAware { this: ConfigAware =>
+
+        override def config: JelloConfig = testConfig.withOverrides(Map("trello.appToken" -> "wrong-token"))
+
+        val respFuture = runRequest[HttpResponse](GetLabelsReq("b1"))
+
+        whenReady(respFuture.failed) {
+          case ex: UnsuccessfulResponseException =>
+            ex.response.status shouldBe StatusCodes.Unauthorized
+            ex.getMessage should include("invalid token")
+          case e => fail(s"Expected different exception here, but got $e.")
+        }
+      }
+    }
+    
+    it("should return token information") { {
+      whenHttp(server)
+        .`match`(get("/tokens/t"))
+        .then(resourceContent("tokens.t.json"))
+
+      val tokenInfo = trello.getTokenInfo.futureValue
+      tokenInfo.identifier shouldBe "Jello"
+      tokenInfo.permissions should contain(TokenPermission("*", "Board", read = true, write = true))
+    }
 
     }
   }

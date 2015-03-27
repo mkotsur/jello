@@ -1,6 +1,6 @@
 package com.xebialabs.jello.domain.json
 
-import com.typesafe.config.ConfigFactory
+import com.xebialabs.jello.conf.ConfigAware
 import com.xebialabs.jello.domain.Jira.Ticket
 import spray.http.{BasicHttpCredentials, HttpRequest}
 import spray.httpx.RequestBuilding._
@@ -11,16 +11,13 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.language.implicitConversions
 
-trait JiraProtocol extends DefaultJsonProtocol {
+trait JiraProtocol extends DefaultJsonProtocol { self: ConfigAware =>
 
-  private val conf = ConfigFactory.load()
 
-  private val apiUri = conf.getString("jira.apiUri")
-  private val estimationFieldId = conf.getString("jira.estimationFieldId")
+  private val apiUri = config.jira.apiUri
+  private val estimationFieldId = config.jira.estimationFieldId
 
-  private val credentials = BasicHttpCredentials(
-    conf.getString("jira.username"), conf.getString("jira.password")
-  )
+  private val credentials = BasicHttpCredentials(config.jira.username, config.jira.password)
 
   case class GetTicketReq(id: String)
   case class TicketResp(id: String, key: String, fields: Map[String, JsValue])
@@ -33,7 +30,6 @@ trait JiraProtocol extends DefaultJsonProtocol {
   implicit val TicketRespFormat = jsonFormat3(TicketResp)
   implicit val RapidTicketRespFormat = jsonFormat3(RapidTicketResp)
   implicit val RapidBoardRespFormat = jsonFormat1(RapidBoardResp)
-
 
 
   // Transformers from responses to domain objects

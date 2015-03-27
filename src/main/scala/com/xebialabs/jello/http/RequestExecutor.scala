@@ -19,6 +19,7 @@ trait RequestExecutor extends LazyLogging {
       sendReceive ~>
       logResponse(loggingFunction) ~>
       unmarshal[T]
+
     pipeline(r)
   }
 

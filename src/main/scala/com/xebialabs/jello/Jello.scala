@@ -9,6 +9,10 @@ import scala.concurrent.Future
 
 class Jello(jira: Jira, trello: Trello) {
 
+  def validateSettings(): Unit = {
+
+  }
+
   def prepareForEstimation(tickets: Seq[String], title: String): Future[Board] = {
 
     Future.sequence(tickets.map(jira.getTicket)).flatMap {
