@@ -20,9 +20,17 @@ object Main extends App with RangeConverter with LazyLogging {
 
   implicit val jira = new Jira() with DefaultConfig
   val trello = new Trello() with DefaultConfig
-  val jello = new Jello(jira, trello)
+  val jello = new Jello(jira, trello) with DefaultConfig
 
   println("Welcome to Jello!")
+
+  try {
+    jello.validateSettings()
+  } finally {
+    logger.debug("Shutting down the actor system.")
+    system.shutdown()
+    system.awaitTermination()
+  }
 
   println("Enter tickets range:")
   val ticketsForEstimation = inputToTickets(StdIn.readLine())
@@ -35,7 +43,7 @@ object Main extends App with RangeConverter with LazyLogging {
   }
 
   val isDone = ticketsForEstimation.flatMap { tickets =>
-      jello.prepareForEstimation(tickets.map(_.id), title)
+    jello.prepareForEstimation(tickets.map(_.id), title)
   } flatMap { board =>
     Future {
       println(s"Please do the estimations at: ${board.shortUrl} and press enter when you're done.")

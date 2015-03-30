@@ -1,7 +1,8 @@
 package com.xebialabs.jello
 
+import com.xebialabs.jello.conf.DefaultConfig
 import com.xebialabs.jello.domain.Jira.Ticket
-import com.xebialabs.jello.domain.Trello.{Card, Column, Board}
+import com.xebialabs.jello.domain.Trello._
 import com.xebialabs.jello.domain.{Jira, Trello}
 import com.xebialabs.jello.support.UnitTestSugar
 import org.mockito.Mockito._
@@ -32,7 +33,7 @@ class JelloTest extends UnitTestSugar {
 
     trello = mock[Trello]
 
-    jello = new Jello(jira, trello)
+    jello = new Jello(jira, trello) with DefaultConfig
 
     myBoard = mock[Board]
     when(myBoard.id).thenReturn("my-board-id")
@@ -73,12 +74,28 @@ class JelloTest extends UnitTestSugar {
       verify(trello).archiveBoard("my-board-id")
     }
 
-    it("should throw an exception when token is empty") {
+    it("should throw an exception when token grants no permissions") {
 
+      val f = Future(TokenInfo("J", "2015.05.05", "2016.05.05", Seq()))
+      when(trello.getTokenInfo).thenReturn(f)
+
+      val e = intercept[RuntimeException] {
+        jello.validateSettings()
+      }
+      e.getMessage shouldBe "Can not find permissions for model '*'"
     }
 
-    it("should throw an exception when token in invalid") {
+    it("should throw an exception when token grants only read permissions") {
+      val tp = TokenPermission("*", "?", read = true, write = false)
+      val f = Future(TokenInfo("J", "2015.05.05", "2016.05.05", Seq(tp)))
+      when(trello.getTokenInfo).thenReturn(f)
 
+
+      val e = intercept[RuntimeException] {
+        jello.validateSettings()
+      }
+      e.getMessage should include("should have read and write permission")
     }
+
   }
 }

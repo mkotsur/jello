@@ -1,8 +1,12 @@
 package com.xebialabs.jello.conf
 
+import java.util.concurrent.TimeUnit
+
 import com.typesafe.config.{Config, ConfigFactory}
+import scala.concurrent.duration._
 
 import scala.collection.JavaConversions._
+import scala.language.postfixOps
 
 object JelloConfig {
 
@@ -32,6 +36,11 @@ sealed class JelloConfig(val conf: Config) {
     lazy val username = conf.getString("jira.username")
 
     lazy val password = conf.getString("jira.password")
+  }
+
+  object jello {
+
+    lazy val futureTimeout = conf.getDuration("jello.futureTimeout", TimeUnit.MILLISECONDS) milliseconds
   }
 
 }
