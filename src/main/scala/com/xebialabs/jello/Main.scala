@@ -26,10 +26,11 @@ object Main extends App with RangeConverter with LazyLogging {
 
   try {
     jello.validateSettings()
-  } finally {
-    logger.debug("Shutting down the actor system.")
-    system.shutdown()
-    system.awaitTermination()
+  } catch  {
+    case e: Throwable =>
+      logger.debug("Shutting down the actor system.")
+      system.shutdown()
+      system.awaitTermination()
   }
 
   println("Enter tickets range:")

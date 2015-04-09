@@ -48,7 +48,7 @@ trait RangeConverter {
         ids.foldLeft(Future(Seq[Ticket]()))((acc: Future[Seq[Ticket]], item: AnyRef) => item match {
           case TicketId(id) =>
             val ticketFuture = jira.getTicket(id) recover {
-              case cause => throw new RuntimeException(s"Ticket $id could not be found")
+              case cause => throw new RuntimeException(s"Ticket $id could not be found", cause)
             }
             acc.flatMap { seq =>  ticketFuture.map( t => seq :+ t)}
           case TicketRange(boardId, begin, end) =>
