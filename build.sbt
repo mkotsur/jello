@@ -25,7 +25,7 @@ libraryDependencies += "org.mockito" % "mockito-core" % "2.0.3-beta" % "test"
 
 libraryDependencies += "org.hamcrest" % "hamcrest-core" % "1.3" % "test"
 
-libraryDependencies += "com.xebialabs.restito" % "restito" % "0.5" % "test"
+libraryDependencies += "com.xebialabs.restito" % "restito" % "0.5.1" % "test"
 
 libraryDependencies += "ch.qos.logback" % "logback-classic" % "1.1.2"
 
