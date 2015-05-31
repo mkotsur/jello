@@ -36,6 +36,8 @@ sealed class JelloConfig(val conf: Config) {
     lazy val username = conf.getString("jira.username")
 
     lazy val password = conf.getString("jira.password")
+
+    lazy val query = conf.getString("jira.query")
   }
 
   object jello {

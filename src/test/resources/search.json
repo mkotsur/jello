@@ -1,0 +1,17 @@
+{
+  "expand": "names,schema",
+  "startAt": 0,
+  "maxResults": 1,
+  "total": 2244,
+  "issues": [
+    {
+      "expand": "operations,versionedRepresentations,editmeta,changelog,transitions,renderedFields",
+      "id": "32512",
+      "self": "https://xebialabs.atlassian.net/rest/api/latest/issue/32512",
+      "key": "REL-2418",
+      "fields": {
+        "summary": "Ship functionality from XLD task to plugin system and more"
+      }
+    }
+  ]
+}

@@ -16,9 +16,11 @@ object Jira {
 
 class Jira extends RequestExecutor with JiraProtocol { self: ConfigAware =>
 
-  def getTicket(id: String): Future[Ticket] = runRequest[TicketResp](GetTicketReq(id))
+  def getTicket(id: String): Future[Ticket] =
+    runRequest[TicketResp](GetTicketReq(id))
 
-  def updateEstimation(t: Ticket): Future[Ticket] = runRequest[HttpResponse](EstimateUpdateReq(t)).map(r => t)
+  def updateEstimation(t: Ticket): Future[Ticket] =
+    runRequest[HttpResponse](EstimateUpdateReq(t)).map(r => t)
 
   def getRapidBoardTickets(rapidBoardId: Int, startWith: String, endWith: String): Future[Seq[Ticket]] = {
     val f: Future[Seq[Ticket]] = runRequest[RapidBoardResp](GetRapidBoardReq(rapidBoardId))
@@ -27,5 +29,8 @@ class Jira extends RequestExecutor with JiraProtocol { self: ConfigAware =>
         tickets.slice(tickets.indexWhere(_.id == startWith), tickets.indexWhere(_.id == endWith) + 1)
     }
   }
+
+  def search(jql: String): Future[Seq[Ticket]] =
+    runRequest[SearchResp](SearchReq(jql))
 
 }

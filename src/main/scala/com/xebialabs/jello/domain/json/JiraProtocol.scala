@@ -14,7 +14,10 @@ import scala.language.implicitConversions
 trait JiraProtocol extends DefaultJsonProtocol { self: ConfigAware =>
 
 
-  private val apiUri = config.jira.apiUri
+  private val apiRoot = config.jira.apiUri
+
+  private val apiLatestBase = s"$apiRoot/api/latest"
+
   private val estimationFieldId = config.jira.estimationFieldId
 
   private val credentials = BasicHttpCredentials(config.jira.username, config.jira.password)
@@ -27,9 +30,15 @@ trait JiraProtocol extends DefaultJsonProtocol { self: ConfigAware =>
 
   case class EstimateUpdateReq(ticket: Ticket)
 
+  case class SearchReq(jql: String, fields: Seq[String] = Seq("summary"))
+  case class SearchResp(total: Int, issues: Seq[TicketResp])
+
   implicit val TicketRespFormat = jsonFormat3(TicketResp)
   implicit val RapidTicketRespFormat = jsonFormat3(RapidTicketResp)
   implicit val RapidBoardRespFormat = jsonFormat1(RapidBoardResp)
+
+  implicit val SearchReqFormat = jsonFormat2(SearchReq)
+  implicit val SearchRespFormat = jsonFormat2(SearchResp)
 
 
   // Transformers from responses to domain objects
@@ -42,21 +51,26 @@ trait JiraProtocol extends DefaultJsonProtocol { self: ConfigAware =>
 
   implicit def ticketRespSeqToTicketSeq(trf: Future[RapidBoardResp]): Future[Seq[Ticket]] = trf.map(_.issues.map(rapidBoardTicketResp2Ticket))
 
+  implicit def searchRespSeqToTicketSeq(sr: Future[SearchResp]): Future[Seq[Ticket]] = sr.map(_.issues.map(r2t))
+
   // Transformers from requests case classes into HTTP Request objects
   implicit def getTicketToHttpReq(gt: GetTicketReq): HttpRequest =
-    Get(s"$apiUri/api/latest/issue/${gt.id}?fields=summary&expand=names") ~> addCredentials(credentials)
+    Get(s"$apiLatestBase/issue/${gt.id}?fields=summary&expand=names") ~> addCredentials(credentials)
 
 
   implicit def getRangeOfTicketsToHttpReq(r: GetRapidBoardReq): HttpRequest =
-    Get(s"$apiUri/greenhopper/1.0/xboard/plan/backlog/data.json?rapidViewId=${r.rapidBoardId}") ~> addCredentials(credentials)
+    Get(s"$apiRoot/greenhopper/1.0/xboard/plan/backlog/data.json?rapidViewId=${r.rapidBoardId}") ~> addCredentials(credentials)
 
   implicit def estimateUpdateReqToHttpReq(r: EstimateUpdateReq): HttpRequest = {
     val estimation = r.ticket.estimation.map(JsNumber(_)).getOrElse(JsNull)
     Put(
-      s"$apiUri/api/2/issue/${r.ticket.id}",
+      s"$apiLatestBase/issue/${r.ticket.id}",
       JsObject(Map("fields" -> JsObject(Map(s"customfield_$estimationFieldId" -> estimation))))
     ) ~> addCredentials(credentials)
   }
+
+  implicit def myPermissionsToHttpReq(r: SearchReq): HttpRequest =
+    Post(s"$apiLatestBase/search", r) ~> addCredentials(credentials)
 
 
 }

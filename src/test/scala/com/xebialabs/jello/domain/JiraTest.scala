@@ -65,16 +65,26 @@ class JiraTest extends UnitTestSugar {
 
     it("should update ticket") {
       whenHttp(server)
-        .`match`(startsWithUri("/api/2/issue/T-"), method(Method.PUT))
+        .`match`(startsWithUri("/api/latest/issue/T-"), method(Method.PUT))
         .then(status(HttpStatus.NO_CONTENT_204))
 
       jira.updateEstimation(Ticket("T-1", "Some ticket with estimation", Some(4))).futureValue
       jira.updateEstimation(Ticket("T-2", "Some ticket without", None)).futureValue
 
       verifyHttp(server)
-        .once(put("/api/2/issue/T-1"), withPostBodyContaining("\"customfield_10012\": 4"))
+        .once(put("/api/latest/issue/T-1"), withPostBodyContaining("\"customfield_10012\": 4"))
         .then()
-        .once(put("/api/2/issue/T-2"), withPostBodyContaining("\"customfield_10012\": null"))
+        .once(put("/api/latest/issue/T-2"), withPostBodyContaining("\"customfield_10012\": null"))
+    }
+
+    it("should return tickets by JQL") {
+      whenHttp(server)
+        .`match`(post("/api/latest/search"))
+        .then(resourceContent("search.json"))
+
+      val tickets = Await.result(jira.search("project = REL"), 10 seconds)
+      tickets shouldBe Seq(Ticket("REL-2418", "Ship functionality from XLD task to plugin system and more"))
+
     }
 
   }
