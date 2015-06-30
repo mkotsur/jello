@@ -72,9 +72,9 @@ class JiraTest extends UnitTestSugar {
       jira.updateEstimation(Ticket("T-2", "Some ticket without", None)).futureValue
 
       verifyHttp(server)
-        .once(put("/api/latest/issue/T-1"), withPostBodyContaining("\"customfield_10012\": 4"))
+        .once(put("/api/latest/issue/T-1"), withPostBodyContaining("\"customfield_42\": 4"))
         .then()
-        .once(put("/api/latest/issue/T-2"), withPostBodyContaining("\"customfield_10012\": null"))
+        .once(put("/api/latest/issue/T-2"), withPostBodyContaining("\"customfield_42\": null"))
     }
 
     it("should return tickets by JQL") {

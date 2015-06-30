@@ -37,7 +37,7 @@ class TrelloTest extends UnitTestSugar {
 
   describe("trello client") {
 
-    it("should create a board with lists and cards at column 0") {
+    it("should create a board with lists and cards at the first list") {
 
       whenHttp(server)
         .`match`(post("/boards"), parameter("key", "k"), parameter("token", "t"))
@@ -59,12 +59,12 @@ class TrelloTest extends UnitTestSugar {
       )
 
       verifyHttp(server)
-        .once(newListCondition("0", 10)).then()
-        .once(newListCondition("11", 20)).then()
-        .once(newListCondition("23", 30)).then()
-        .once(newListCondition("24", 40)).then()
-        .once(newListCondition("25", 50)).then()
-        .once(newListCondition("26", 60))
+        .once(newListCondition("Home", 10)).then()
+        .once(newListCondition("0", 20)).then()
+        .once(newListCondition("11", 30)).then()
+        .once(newListCondition("23", 40)).then()
+        .once(newListCondition("24", 50)).then()
+        .once(newListCondition("25", 60))
     }
 
     it("should put tickets") {

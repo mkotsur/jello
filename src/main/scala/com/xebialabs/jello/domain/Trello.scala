@@ -76,9 +76,9 @@ class Trello extends RequestExecutor with TrelloProtocol { this: ConfigAware =>
 
     val columns = config.trello.lists
 
-    def createColumn(board: String, column: Int): Future[Column] = {
+    def createColumn(board: String, column: String): Future[Column] = {
       runRequest[NewColumnResp](
-        (board,ColumnReq(column.toString, columns.indexOf(column) * 10 + 10))
+        (board,ColumnReq(column, columns.indexOf(column) * 10 + 10))
       )
     }
 

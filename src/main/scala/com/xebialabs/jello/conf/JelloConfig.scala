@@ -24,7 +24,7 @@ sealed class JelloConfig(val conf: Config) {
 
     lazy val apiUri = conf.getString("trello.apiUri")
 
-    lazy val lists: Seq[Int] = conf.getIntList("trello.lists").map(_.toInt)
+    lazy val lists: Seq[String] = conf.getStringList("trello.lists")
   }
 
   object jira {

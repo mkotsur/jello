@@ -4,7 +4,7 @@ import com.typesafe.scalalogging.LazyLogging
 import com.xebialabs.jello.Main._
 import com.xebialabs.jello.conf.ConfigAware
 import com.xebialabs.jello.domain.Jira.Ticket
-import com.xebialabs.jello.domain.Trello.Board
+import com.xebialabs.jello.domain.Trello.{Column, Board}
 import com.xebialabs.jello.domain.{Jira, Trello}
 import com.xebialabs.jello.watch.DragWatcherActor
 import com.xebialabs.jello.watch.DragWatcherActor.Tick
@@ -14,6 +14,7 @@ import scala.concurrent.Future
 import scala.concurrent.duration._
 import scala.language.postfixOps
 import scala.util.{Failure, Success, Try}
+import com.xebialabs.jello.domain._
 
 class Jello(jira: Jira, trello: Trello) extends LazyLogging { self: ConfigAware =>
 
@@ -61,7 +62,17 @@ class Jello(jira: Jira, trello: Trello) extends LazyLogging { self: ConfigAware 
   ) yield board
 
   def saveEstimationsFrom(board: Board): Future[Unit] = board.getColumns.flatMap { columns =>
-    val tickets: Seq[Ticket] = columns
+
+    val tickets: Seq[Ticket] = columns.filter(_.name.isNumber).flatMap { column =>
+      column.cards.map {
+        card => Ticket(
+          card.name.split(" ").head,
+          card.name.split(" ").tail.mkString(" "),
+          Some(column.name.toInt)
+        )
+      }
+    }
+
     Future.sequence(tickets.map(jira.updateEstimation))
   } map  {
     _ => trello.archiveBoard(board.id)

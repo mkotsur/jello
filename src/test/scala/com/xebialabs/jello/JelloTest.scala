@@ -56,13 +56,14 @@ class JelloTest extends UnitTestSugar {
       val estimatedT1 = t1.copy(estimation = Some(3))
       val estimatedT2 = t2.copy(estimation = Some(2))
 
+      val cHome = Column("cHome", "Home", Seq(Card("c1", "T-3 Title 3")))
       val c3 = Column("c3", "3", Seq(Card("c1", "T-1 Title 1")))
       val c2 = Column("c2", "2", Seq(Card("c2", "T-2 Title 2")))
 
       val myBoard = mock[Board]
       when(myBoard.id).thenReturn("my-board-id")
 
-      when(myBoard.getColumns).thenReturn(Future(Seq(c3, c2)))
+      when(myBoard.getColumns).thenReturn(Future(Seq(cHome, c3, c2)))
       when(jira.updateEstimation(estimatedT1)).thenReturn(Future(estimatedT1))
       when(jira.updateEstimation(estimatedT2)).thenReturn(Future(estimatedT2))
 

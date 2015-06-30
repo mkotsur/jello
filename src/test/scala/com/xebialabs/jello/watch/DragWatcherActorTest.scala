@@ -18,7 +18,7 @@ class DragWatcherActorTest extends ActorTestSugar {
       val b = mock[Board]
 
       when(b.getColumns).thenReturn(Future(Seq(
-        Column("c0", "0", Seq(Card("c1", "ticket1"), Card("c2", "ticket2"))),
+        Column("c0", "Home", Seq(Card("c1", "ticket1"), Card("c2", "ticket2"))),
         Column("c1", "1", Seq()),
         Column("c2", "2", Seq())
       )))
@@ -32,7 +32,7 @@ class DragWatcherActorTest extends ActorTestSugar {
 
       when(b.getColumns).thenReturn(
         Future(Seq(
-          Column("c0", "0", Seq(Card("c1", "ticket1"))),
+          Column("c0", "Home", Seq(Card("c1", "ticket1"))),
           Column("c1", "1", Seq(Card("c2", "ticket2"))),
           Column("c2", "2", Seq())
         ))
@@ -46,7 +46,7 @@ class DragWatcherActorTest extends ActorTestSugar {
 
       when(b.getColumns).thenReturn(
         Future(Seq(
-          Column("c0", "0", Seq(Card("c1", "ticket1"))),
+          Column("c0", "Home", Seq(Card("c1", "ticket1"))),
           Column("c1", "1", Seq()),
           Column("c2", "2", Seq(Card("c2", "ticket2")))
         ))
