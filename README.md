@@ -1,5 +1,7 @@
 This tool enables Trello/Jira integration. More details will follow later.
 
+[![Circle CI](https://circleci.com/gh/mkotsur/jello.svg?style=svg)](https://circleci.com/gh/mkotsur/jello)
+
 
 # Starting
 
