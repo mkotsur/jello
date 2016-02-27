@@ -27,7 +27,7 @@ object Trello {
 
   case class TokenInfo(identifier: String, dateCreated: String, dateExpires: String, permissions: Seq[TokenPermission])
 
-  case class Board(id: String, shortUrl: String, lists: Seq[Column] = Seq()) extends RequestExecutor with TrelloProtocol with DefaultConfig {
+  case class Board(id: String, name: String, shortUrl: String, lists: Seq[Column] = Seq()) extends RequestExecutor with TrelloProtocol with DefaultConfig {
 
     /**
      * Retrieves estimated tickets from the board.
@@ -95,10 +95,24 @@ class Trello extends RequestExecutor with TrelloProtocol { this: ConfigAware =>
   }
 
   /**
+    * Lists boards of a member (by username or member id).
+    */
+  def listBoards(member: String): Future[Seq[Board]] = {
+    runRequest[Seq[BoardResp]](ListBoardsReq(member))
+  }
+
+  /**
+    * Deletes a board of a member.
+    */
+  def deleteBoard(boardId: String, member: String) = {
+    runRequest[HttpResponse](DeleteBoardReq(boardId, member))
+  }
+
+  /**
    * Archives a board.
    * //TODO: move into Board class
    */
-  def archiveBoard(id: String) = runRequest[BoardResp](id, CloseBoardReq())
+  def closeBoard(id: String) = runRequest[BoardResp](CloseBoardReq(id, value = true))
 
 
 }

@@ -73,7 +73,7 @@ class TrelloTest extends UnitTestSugar {
         .`match`(post("/cards"))
         .then(resourceContent("cards.post.json"))
 
-      val board = new Board("b1", "http://url.short", Seq(Column("0", "c0"), Column("1", "c1"), Column("42", "c42"))) {
+      val board = new Board("b1", "Some board", "http://url.short", Seq(Column("0", "c0"), Column("1", "c1"), Column("42", "c42"))) {
         override def config: JelloConfig = testConfig
       }
 
@@ -84,21 +84,21 @@ class TrelloTest extends UnitTestSugar {
             withPostBodyContaining(s"""Ticket 1""""),
             withPostBodyContaining(s""""idList": "0"""")
           ).then().once(
-            post("/cards"),
-            withPostBodyContaining(s"""Ticket 2""""),
-            withPostBodyContaining(s""""idList": "0"""")
-          )
+          post("/cards"),
+          withPostBodyContaining(s"""Ticket 2""""),
+          withPostBodyContaining(s""""idList": "0"""")
+        )
 
       }
 
     }
 
-    it("should archive board") {
+    it("should close a board") {
       whenHttp(server)
         .`match`(put("/boards/b2/closed"))
         .then(resourceContent("boards.closed.put.json"))
 
-      whenReady(trello.archiveBoard("b2")) { r =>
+      whenReady(trello.closeBoard("b2")) { r =>
         verifyHttp(server).once(
           put("/boards/b2/closed"),
           withPostBodyContaining(s""""value": true""")
@@ -112,7 +112,7 @@ class TrelloTest extends UnitTestSugar {
         .`match`(get("/boards/b1/lists"), parameter("cards", "open"))
         .then(resourceContent("boards.b1.lists.json"))
 
-      val columns = (new Board("b1", "http://aaa") with TestConfig).getColumns.futureValue
+      val columns = (new Board("b1", "Some board", "http://aaa") with TestConfig).getColumns.futureValue
 
       columns shouldEqual Seq(
         Column("i1", "0", Seq(Card("c1", "T-1 Do everything good"))),
@@ -132,7 +132,7 @@ class TrelloTest extends UnitTestSugar {
         .then(status(HttpStatus.NO_CONTENT_204))
 
 
-      (new Board("b1", "http://bbb") with TestConfig).updateLabel(Card("c1", "Card 1")).futureValue
+      (new Board("b1", "Some board", "http://bbb") with TestConfig).updateLabel(Card("c1", "Card 1")).futureValue
 
       verifyHttp(server)
         .once(post("/cards/c1/idLabels"), withPostBodyContaining("\"value\": \"l1\""))
@@ -160,8 +160,8 @@ class TrelloTest extends UnitTestSugar {
         }
       }
     }
-    
-    it("should return token information") { {
+
+    it("should return token information") {
       whenHttp(server)
         .`match`(get("/tokens/t"))
         .then(resourceContent("tokens.t.json"))
@@ -171,7 +171,32 @@ class TrelloTest extends UnitTestSugar {
       tokenInfo.permissions should contain(TokenPermission("*", "Board", read = true, write = true))
     }
 
+    it("should list boards") {
+      whenHttp(server)
+        .`match`(get("/members/someuser/boards"))
+        .then(resourceContent("boards.list.json"))
+
+      val boards = trello.listBoards("someuser").futureValue
+      boards should have size 2
+      val Seq(b1, b2) = boards
+
+      b1.id shouldBe "4eea4ffc91e31d1746000046"
+      b1.name shouldBe "Example Board"
+
+      b2.id shouldBe "4ee7e707e582acdec800051a"
+      b2.name shouldBe "Public Board"
     }
+
+    it("should delete a board") {
+      whenHttp(server)
+        .`match`(delete("/boards/bbbb01/members/someuser"))
+        .then(status(HttpStatus.OK_200))
+
+      trello.deleteBoard("bbbb01", "someuser").futureValue
+
+      verifyHttp(server).once(delete("/boards/bbbb01/members/someuser"))
+    }
+
   }
 
 }

@@ -4,7 +4,7 @@ import com.typesafe.scalalogging.LazyLogging
 import com.xebialabs.jello.Main._
 import com.xebialabs.jello.conf.ConfigAware
 import com.xebialabs.jello.domain.Jira.Ticket
-import com.xebialabs.jello.domain.Trello.{Column, Board}
+import com.xebialabs.jello.domain.Trello.Board
 import com.xebialabs.jello.domain.{Jira, Trello}
 import com.xebialabs.jello.watch.DragWatcherActor
 import com.xebialabs.jello.watch.DragWatcherActor.Tick
@@ -75,7 +75,7 @@ class Jello(jira: Jira, trello: Trello) extends LazyLogging { self: ConfigAware 
 
     Future.sequence(tickets.map(jira.updateEstimation))
   } map  {
-    _ => trello.archiveBoard(board.id)
+    _ => trello.closeBoard(board.id)
   }
 
   def handleEstimation(board: Board): Future[Unit] = {

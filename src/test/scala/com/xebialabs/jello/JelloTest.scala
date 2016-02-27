@@ -70,7 +70,7 @@ class JelloTest extends UnitTestSugar {
       whenReady(jello.saveEstimationsFrom(myBoard)) { _ =>
         verify(jira).updateEstimation(estimatedT1)
         verify(jira).updateEstimation(estimatedT2)
-        verify(trello).archiveBoard("my-board-id")
+        verify(trello).closeBoard("my-board-id")
       }
 
     }

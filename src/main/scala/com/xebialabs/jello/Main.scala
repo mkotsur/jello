@@ -28,7 +28,7 @@ object Main extends App with RangeConverter with DefaultConfig with LazyLogging 
     board <- jello.prepareForEstimation(Future(tickets), title);
     _ <- jello.handleEstimation(board);
     _ <- jello.saveEstimationsFrom(board);
-    _ <- trello.archiveBoard(board.id)
+    _ <- trello.closeBoard(board.id)
   ) yield ()
 
   

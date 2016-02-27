@@ -1,8 +1,5 @@
 package com.xebialabs.jello.domain.json
 
-import java.util.Date
-
-import com.typesafe.config.ConfigFactory
 import com.xebialabs.jello.conf.ConfigAware
 import com.xebialabs.jello.domain.Trello._
 import spray.http.HttpRequest
@@ -32,8 +29,7 @@ trait TrelloProtocol extends DefaultJsonProtocol { this: ConfigAware =>
   case class BoardResp(id: String, name: String, url: String, shortUrl: String)
   implicit val BoardRespFormat = jsonFormat4(BoardResp)
   
-  case class CloseBoardReq(value: Boolean = true)
-  implicit val CloseBoardReqFormat = jsonFormat1(CloseBoardReq)
+  case class CloseBoardReq(boardId: String, value: Boolean = true)
 
   case class GetLabelsReq(boardId: String)
 
@@ -55,6 +51,10 @@ trait TrelloProtocol extends DefaultJsonProtocol { this: ConfigAware =>
 
   case class ColumnsReq(boardId: String)
 
+  case class ListBoardsReq(member: String)
+
+  case class DeleteBoardReq(boardId: String, member: String)
+
   /**
    * Directly for domain objects
    */
@@ -68,7 +68,9 @@ trait TrelloProtocol extends DefaultJsonProtocol { this: ConfigAware =>
    * Transformers from response objects (defined above) into domain objects
    */
 
-  implicit def boardRespToBoard(b: Future[BoardResp]): Future[Board] = b.map(bb => Board(bb.id, bb.shortUrl))
+  implicit def boardRespToBoard(b: Future[BoardResp]): Future[Board] = b.map(bb => Board(bb.id, bb.name, bb.shortUrl))
+
+  implicit def seqBoardRespToSeqBoard(b: Future[Seq[BoardResp]]): Future[Seq[Board]] = b.map(bb => bb.map(b => Board(b.id, b.name, b.shortUrl)))
 
   implicit def columnRespToColumn(b: Future[NewColumnResp]): Future[Column] = b.map(bb => Column(bb.id, bb.name))
 
@@ -80,9 +82,8 @@ trait TrelloProtocol extends DefaultJsonProtocol { this: ConfigAware =>
   implicit def newBoardReqToHttpReq(b: NewBoardReq): HttpRequest =
     Post(s"$apiUri/boards?key=$appKey&token=$token", b)
 
-  implicit def closeBoardReqToHttpReq(idAndReq: (String, CloseBoardReq)): HttpRequest =
-    Put(s"$apiUri/boards/${idAndReq._1}/closed?key=$appKey&token=$token", idAndReq._2
-    )
+  implicit def closeBoardReqToHttpReq(req: CloseBoardReq): HttpRequest =
+    Put(s"$apiUri/boards/${req.boardId}/closed?key=$appKey&token=$token", Map[String, Boolean]("value" -> req.value))
 
   implicit def newCardReqToHttpReq(nc: NewCardReq): HttpRequest = Post(s"$apiUri/cards?key=$appKey&token=$token", nc)
 
@@ -97,6 +98,12 @@ trait TrelloProtocol extends DefaultJsonProtocol { this: ConfigAware =>
 
   implicit def updateLabelsReqToHttpReq(ulr: UpdateLabelReq): HttpRequest =
     Post(s"$apiUri/cards/${ulr.cardId}/idLabels?key=$appKey&token=$token", Map("value" -> ulr.labelId))
+
+  implicit def listBoardsReqToHttpReq(req: ListBoardsReq): HttpRequest =
+    Get(s"$apiUri/members/${req.member}/boards?key=$appKey&token=$token")
+
+  implicit def deleteBoardReqToHttpReq(req: DeleteBoardReq): HttpRequest =
+    Delete(s"$apiUri/boards/${req.boardId}/members/${req.member}?key=$appKey&token=$token")
 
   val TokenInfoReq: HttpRequest = Get(s"$apiUri/tokens/$token?key=$appKey")
 

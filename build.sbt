@@ -5,7 +5,7 @@ enablePlugins(JavaAppPackaging)
 
 mainClass in Compile := Some("com.xebialabs.jello.Main")
 
-scalaVersion := "2.11.5"
+scalaVersion := "2.11.7"
 
 resolvers += "Maven Central Server" at "http://repo1.maven.org/maven2"
 
