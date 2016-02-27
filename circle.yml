@@ -1,5 +1,6 @@
 machine:
   environment:
+    SBT_OPTS: "-Xmx1G -XX:MaxMetaspaceSize=384M -XX:+UseCompressedOops"
     SBT_VERSION: 0.13.9
   pre:
       - wget --output-document=$HOME/bin/sbt-launch.jar
