@@ -3,7 +3,7 @@ machine:
     SBT_VERSION: 0.13.9
   pre:
       - wget --output-document=$HOME/bin/sbt-launch.jar
-        https://dl.bintray.com/typesafe/ivy-releases/org.scala-sbt/sbt-launch/$SBT_VERSION/sbt-launch.jar
+        https://dl.bintray.com/typesafe/ivy-releases/org.scala-sbt/sbt-launch/0.13.9/sbt-launch.jar
       - echo "java $SBT_OPTS -jar \`dirname \$0\`/sbt-launch.jar \"\$@\""
         > $HOME/bin/sbt
       - chmod u+x $HOME/bin/sbt
